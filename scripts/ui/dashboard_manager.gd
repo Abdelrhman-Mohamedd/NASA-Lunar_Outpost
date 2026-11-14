@@ -408,19 +408,18 @@ func _build_resources_panel(meta: Dictionary) -> void:
 			resources_list.add_child(UiKit.label("• " + GameState.daily_log[i], 13, UiKit.COLOR_TEXT))
 		return
 
-	_add_res_line("⚡", Color(0.98, 0.78, 0.2), "BATTERY", "%s  (%s)" % [GameState.meter_word("battery").to_upper(), GameState.meter_trend("battery").to_upper()])
-	_add_res_line("🫧", Color(0.3, 0.85, 1.0), "OXYGEN", "%s  (%s)" % [GameState.meter_word("oxygen").to_upper(), GameState.meter_trend("oxygen").to_upper()])
-	_add_res_line("🌱", Color(0.4, 0.92, 0.5), "FOOD", "%s  (GREENHOUSE: %s)" % [GameState.meter_word("food").to_upper(), GameState.greenhouse_mode.to_upper()])
-	_add_res_line("💧", Color(0.45, 0.68, 1.0), "WATER", "%s  (%s)" % [GameState.meter_word("water").to_upper(), GameState.meter_trend("water").to_upper()])
+	_add_res_line("battery", Color(0.98, 0.78, 0.2), "BATTERY", "%s  (%s)" % [GameState.meter_word("battery").to_upper(), GameState.meter_trend("battery").to_upper()])
+	_add_res_line("oxygen", Color(0.3, 0.85, 1.0), "OXYGEN", "%s  (%s)" % [GameState.meter_word("oxygen").to_upper(), GameState.meter_trend("oxygen").to_upper()])
+	_add_res_line("food", Color(0.4, 0.92, 0.5), "FOOD", "%s  (GREENHOUSE: %s)" % [GameState.meter_word("food").to_upper(), GameState.greenhouse_mode.to_upper()])
+	_add_res_line("water", Color(0.45, 0.68, 1.0), "WATER", "%s  (%s)" % [GameState.meter_word("water").to_upper(), GameState.meter_trend("water").to_upper()])
 	var sh_stars := UiKit.stars(GameState.shield, Rules.max_value("shield"))
-	_add_res_line("🛡️", Color(0.75, 0.5, 1.0), "SHIELD & HEALTH", "SHIELD %s  |  HEALTH (%s)" % [sh_stars, GameState.meter_word("health").to_upper()])
+	_add_res_line("shield", Color(0.75, 0.5, 1.0), "SHIELD & HEALTH", "SHIELD %s  |  HEALTH (%s)" % [sh_stars, GameState.meter_word("health").to_upper()])
 
 
 func _add_res_line(icon_txt: String, col: Color, name_txt: String, val_txt: String) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	var icon := UiKit.label(icon_txt, 14, col, false)
-	icon.custom_minimum_size = Vector2(22, 0)
+	var icon := UiKit.icon_badge(icon_txt, col)
 	row.add_child(icon)
 	var lbl := UiKit.label("%s  (%s)" % [name_txt, val_txt], 13, UiKit.COLOR_TEXT, false)
 	row.add_child(lbl)
@@ -467,38 +466,38 @@ func _build_rows(_meta: Dictionary) -> void:
 
 	match current_facility_id:
 		"power_station":
-			_add_action_row("☀", Color(1, 0.82, 0.2), "CLEAN SOLAR PANELS", "READY", false, "KEEPS SUNLIGHT STRONG", "CLEAN", "repair_panel", null)
-			_add_action_row("🔬", Color(0.85, 0.55, 1.0), "SCIENCE EXPERIMENT", "STAR GOAL", false, "EARNS SCIENCE FOR 3 STARS", "RESEARCH", "experiment", null)
+			_add_action_row("sun", Color(1, 0.82, 0.2), "CLEAN SOLAR PANELS", "READY", false, "KEEPS SUNLIGHT STRONG", "CLEAN", "repair_panel", null)
+			_add_action_row("science", Color(0.85, 0.55, 1.0), "SCIENCE EXPERIMENT", "STAR GOAL", false, "EARNS SCIENCE FOR 3 STARS", "RESEARCH", "experiment", null)
 
 		"life_support":
-			_add_action_row("🫧", Color(0.35, 0.85, 1.0), "NORMAL MODE", "BALANCED", GameState.life_support_mode == "normal", "KEEPS OXYGEN STEADY", "SELECT", "set_life_support", "normal")
-			_add_action_row("🫧", Color(0.3, 0.95, 0.7), "HIGH MODE", "EXTRA AIR", GameState.life_support_mode == "high", "FILLS OXYGEN UP FAST", "SELECT", "set_life_support", "high")
-			_add_action_row("🫧", Color(0.95, 0.75, 0.3), "ECO MODE", "LOW POWER", GameState.life_support_mode == "eco", "SAVES POWER (AIR DROPS)", "SELECT", "set_life_support", "eco")
-			_add_action_row("⚡", Color(0.4, 0.95, 1.0), "EMERGENCY OXYGEN", "INSTANT", false, "QUICK BURST OF FRESH AIR", "BOOST", "emergency_oxygen", null)
+			_add_action_row("oxygen", Color(0.35, 0.85, 1.0), "NORMAL MODE", "BALANCED", GameState.life_support_mode == "normal", "KEEPS OXYGEN STEADY", "SELECT", "set_life_support", "normal")
+			_add_action_row("oxygen", Color(0.3, 0.95, 0.7), "HIGH MODE", "EXTRA AIR", GameState.life_support_mode == "high", "FILLS OXYGEN UP FAST", "SELECT", "set_life_support", "high")
+			_add_action_row("oxygen", Color(0.95, 0.75, 0.3), "ECO MODE", "LOW POWER", GameState.life_support_mode == "eco", "SAVES POWER (AIR DROPS)", "SELECT", "set_life_support", "eco")
+			_add_action_row("battery", Color(0.4, 0.95, 1.0), "EMERGENCY OXYGEN", "INSTANT", false, "QUICK BURST OF FRESH AIR", "BOOST", "emergency_oxygen", null)
 
 		"greenhouse":
-			_add_action_row("🌱", Color(0.4, 0.92, 0.5), "LOW HARVEST", "BALANCED", GameState.greenhouse_mode == "low", "STEADY SMALL HARVEST", "SELECT", "set_greenhouse", "low")
-			_add_action_row("🌿", Color(0.2, 1.0, 0.55), "HIGH HARVEST", "BIG CROP", GameState.greenhouse_mode == "high", "GROWS LOTS OF FOOD", "SELECT", "set_greenhouse", "high")
-			_add_action_row("⏸", Color(0.75, 0.7, 0.85), "GREENHOUSE OFF", "PAUSED", GameState.greenhouse_mode == "off", "SAVES WATER & POWER", "SELECT", "set_greenhouse", "off")
-			_add_action_row("🔧", Color(0.95, 0.78, 0.25), "FIX WATER PUMP", "REPAIR", false, "FIXES BROKEN PUMP", "REPAIR", "repair_pump", null)
+			_add_action_row("food", Color(0.4, 0.92, 0.5), "LOW HARVEST", "BALANCED", GameState.greenhouse_mode == "low", "STEADY SMALL HARVEST", "SELECT", "set_greenhouse", "low")
+			_add_action_row("crop", Color(0.2, 1.0, 0.55), "HIGH HARVEST", "BIG CROP", GameState.greenhouse_mode == "high", "GROWS LOTS OF FOOD", "SELECT", "set_greenhouse", "high")
+			_add_action_row("pause", Color(0.75, 0.7, 0.85), "GREENHOUSE OFF", "PAUSED", GameState.greenhouse_mode == "off", "SAVES WATER & POWER", "SELECT", "set_greenhouse", "off")
+			_add_action_row("wrench", Color(0.95, 0.78, 0.25), "FIX WATER PUMP", "REPAIR", false, "FIXES BROKEN PUMP", "REPAIR", "repair_pump", null)
 
 		"radiation_shelter":
 			if GameState.phase == GameState.PHASE_STORM:
 				_add_table_row(
-					"🚨", Color(1.0, 0.35, 0.4), "STORM LOCKDOWN", "NOW!", true, "PROTECTS CREW FROM STORM", "LOCK DOWN", true,
+					"alert", Color(1.0, 0.35, 0.4), "STORM LOCKDOWN", "NOW!", true, "PROTECTS CREW FROM STORM", "LOCK DOWN", true,
 					func() -> void:
 						close_dashboard()
 						lockdown_requested.emit()
 				)
 			var max_sh := (GameState.shield >= Rules.max_value("shield"))
-			_add_action_row("🛡️", Color(0.75, 0.5, 1.0), "UPGRADE SHIELD", "LVL %d/%d" % [GameState.shield, Rules.max_value("shield")], max_sh, "BLOCKS MORE STORM DAMAGE", "UPGRADE", "upgrade_shield", null)
+			_add_action_row("shield", Color(0.75, 0.5, 1.0), "UPGRADE SHIELD", "LVL %d/%d" % [GameState.shield, Rules.max_value("shield")], max_sh, "BLOCKS MORE STORM DAMAGE", "UPGRADE", "upgrade_shield", null)
 
 		"comms_room":
-			_add_action_row("📡", Color(0.45, 0.75, 1.0), "STORM FORECAST", "2d REPLY", false, "WARNS BEFORE BIG STORMS", "SEND", "forecast", null)
-			_add_action_row("💬", Color(0.75, 0.6, 1.0), "MISSION ADVICE", "2d REPLY", false, "TIPS FROM EARTH CONTROL", "SEND", "advice", null)
-			_add_action_row("📦", Color(0.4, 0.92, 0.5), "FOOD SUPPLY POD", "3d DROP", false, "DROPS A CRATE OF FOOD", "SEND", "resupply", "food")
-			_add_action_row("📦", Color(0.35, 0.85, 1.0), "OXYGEN SUPPLY POD", "3d DROP", false, "DROPS AN OXYGEN TANK", "SEND", "resupply", "oxygen")
-			_add_action_row("📦", Color(0.45, 0.68, 1.0), "WATER SUPPLY POD", "3d DROP", false, "DROPS CLEAN WATER", "SEND", "resupply", "water")
+			_add_action_row("radar", Color(0.45, 0.75, 1.0), "STORM FORECAST", "2d REPLY", false, "WARNS BEFORE BIG STORMS", "SEND", "forecast", null)
+			_add_action_row("chat", Color(0.75, 0.6, 1.0), "MISSION ADVICE", "2d REPLY", false, "TIPS FROM EARTH CONTROL", "SEND", "advice", null)
+			_add_action_row("pod", Color(0.4, 0.92, 0.5), "FOOD SUPPLY POD", "3d DROP", false, "DROPS A CRATE OF FOOD", "SEND", "resupply", "food")
+			_add_action_row("pod", Color(0.35, 0.85, 1.0), "OXYGEN SUPPLY POD", "3d DROP", false, "DROPS AN OXYGEN TANK", "SEND", "resupply", "oxygen")
+			_add_action_row("pod", Color(0.45, 0.68, 1.0), "WATER SUPPLY POD", "3d DROP", false, "DROPS CLEAN WATER", "SEND", "resupply", "water")
 
 
 func _add_header_col(title: String, min_w: float) -> void:
@@ -551,8 +550,7 @@ func _add_table_row(
 	var name_box := HBoxContainer.new()
 	name_box.custom_minimum_size = Vector2(220, 0)
 	name_box.add_theme_constant_override("separation", 8)
-	var ic := UiKit.label(icon_txt, 15, col, false)
-	ic.custom_minimum_size = Vector2(22, 0)
+	var ic := UiKit.icon_badge(icon_txt, col)
 	name_box.add_child(ic)
 	name_box.add_child(UiKit.label(title, 13, UiKit.COLOR_TEXT, false))
 	row.add_child(name_box)
@@ -567,13 +565,13 @@ func _add_table_row(
 	row.add_child(stat_pill)
 
 	# 3. Toggle indicator (70px)
-	var tog := UiKit.label("──●" if is_active else "●──", 14, UiKit.COLOR_GOLD if is_active else UiKit.COLOR_MUTED, false)
+	var tog := UiKit.label("[ ON ]" if is_active else "OFF", 12, UiKit.COLOR_GOLD if is_active else UiKit.COLOR_MUTED, false)
 	tog.custom_minimum_size = Vector2(70, 0)
 	tog.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	row.add_child(tog)
 
-	# 4. Effect + crystal icon (220px)
-	var eff_lbl := UiKit.label("◆ " + effect_txt, 12, UiKit.COLOR_ACCENT if enabled else UiKit.COLOR_MUTED, false)
+	# 4. Effect + bullet icon (220px)
+	var eff_lbl := UiKit.label("• " + effect_txt, 12, UiKit.COLOR_ACCENT if enabled else UiKit.COLOR_MUTED, false)
 	eff_lbl.custom_minimum_size = Vector2(220, 0)
 	eff_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(eff_lbl)

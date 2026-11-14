@@ -125,7 +125,7 @@ static func button(text: String, size: int = FONT_BODY, min_size: Vector2 = Vect
 
 static func close_circle_button() -> Button:
 	var btn := Button.new()
-	btn.text = "✕"
+	btn.text = "X"
 	btn.custom_minimum_size = Vector2(32, 32)
 	btn.add_theme_font_size_override("font_size", 15)
 	btn.add_theme_color_override("font_color", COLOR_TEXT)
@@ -185,11 +185,106 @@ static func clear_children(node: Node) -> void:
 		child.queue_free()
 
 
-static func stars(filled: int, total: int, sep: String = "") -> String:
+static func stars(filled: int, total: int, sep: String = " ") -> String:
 	var parts: Array[String] = []
 	for i in range(total):
-		parts.append("★" if i < filled else "☆")
-	return sep.join(parts)
+		parts.append("[*]" if i < filled else "[ ]")
+	var joiner := " " if sep == "" else sep
+	return joiner.join(parts)
+
+
+static func icon_badge(kind: String, col: Color) -> Control:
+	var b := _VectorBadge.new(kind, col)
+	b.custom_minimum_size = Vector2(22, 20)
+	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return b
+
+
+class _VectorBadge extends Control:
+	var kind: String
+	var col: Color
+
+	func _init(k: String, c: Color) -> void:
+		kind = k
+		col = c
+
+	func _draw() -> void:
+		var c := Vector2(size.x * 0.5, size.y * 0.5)
+		match kind:
+			"battery":
+				draw_colored_polygon(PackedVector2Array([
+					c + Vector2(1, -8), c + Vector2(-5, 1), c + Vector2(0, 1),
+					c + Vector2(-2, 8), c + Vector2(5, -1), c + Vector2(0, -1),
+				]), col)
+			"oxygen":
+				draw_arc(c + Vector2(-2, 1), 3.8, 0.0, TAU, 16, col, 1.8)
+				draw_arc(c + Vector2(4, -3), 2.6, 0.0, TAU, 14, col, 1.6)
+				draw_arc(c + Vector2(3, 4), 2.0, 0.0, TAU, 12, col, 1.5)
+			"food", "crop":
+				draw_line(c + Vector2(0, 7), c + Vector2(0, -3), col, 2.0)
+				draw_colored_polygon(PackedVector2Array([
+					c + Vector2(0, 1), c + Vector2(-6, -3), c + Vector2(-2, -6),
+				]), col)
+				draw_colored_polygon(PackedVector2Array([
+					c + Vector2(0, -1), c + Vector2(6, -5), c + Vector2(2, -8),
+				]), col)
+			"water":
+				draw_colored_polygon(PackedVector2Array([
+					c + Vector2(0, -7), c + Vector2(-5, 2), c + Vector2(5, 2),
+				]), col)
+				draw_circle(c + Vector2(0, 2.5), 5.0, col)
+			"shield":
+				var pts := PackedVector2Array([
+					c + Vector2(0, -8), c + Vector2(6, -5), c + Vector2(5, 2),
+					c + Vector2(0, 8), c + Vector2(-5, 2), c + Vector2(-6, -5),
+				])
+				draw_colored_polygon(pts, Color(col.r, col.g, col.b, 0.35))
+				pts.append(pts[0])
+				draw_polyline(pts, col, 1.8)
+			"sun":
+				draw_circle(c, 3.8, col)
+				for i in range(8):
+					var a := float(i) * TAU / 8.0
+					var d := Vector2(cos(a), sin(a))
+					draw_line(c + d * 5.2, c + d * 7.8, col, 1.6)
+			"science":
+				var pts := PackedVector2Array([
+					c + Vector2(-2, -7), c + Vector2(2, -7), c + Vector2(2, -3),
+					c + Vector2(6, 6), c + Vector2(-6, 6), c + Vector2(-2, -3),
+				])
+				draw_colored_polygon(pts, Color(col.r, col.g, col.b, 0.35))
+				pts.append(pts[0])
+				draw_polyline(pts, col, 1.8)
+			"pause":
+				draw_rect(Rect2(c + Vector2(-5, -6), Vector2(3.5, 12)), col, true)
+				draw_rect(Rect2(c + Vector2(1.5, -6), Vector2(3.5, 12)), col, true)
+			"wrench":
+				draw_line(c + Vector2(-5, 5), c + Vector2(3, -3), col, 2.6)
+				draw_arc(c + Vector2(4, -4), 3.2, 0.5, 4.8, 12, col, 2.0)
+			"alert":
+				draw_colored_polygon(PackedVector2Array([
+					c + Vector2(0, -8), c + Vector2(7, 6), c + Vector2(-7, 6),
+				]), col)
+				draw_line(c + Vector2(0, -3), c + Vector2(0, 2), COLOR_BG_DEEP, 2.0)
+				draw_circle(c + Vector2(0, 4.2), 1.1, COLOR_BG_DEEP)
+			"radar":
+				draw_arc(c + Vector2(-1, 2), 5.0, PI * 0.75, PI * 1.75, 14, col, 2.0)
+				draw_line(c + Vector2(-1, 2), c + Vector2(4, -3), col, 1.8)
+				draw_arc(c + Vector2(2, -1), 4.5, -PI * 0.45, 0.1, 10, col, 1.5)
+				draw_line(c + Vector2(-4, 7), c + Vector2(2, 7), col, 2.0)
+			"chat":
+				draw_rect(Rect2(c + Vector2(-6, -6), Vector2(12, 9)), col, false, 1.8)
+				draw_colored_polygon(PackedVector2Array([
+					c + Vector2(-3, 3), c + Vector2(1, 3), c + Vector2(-4, 7),
+				]), col)
+			"pod":
+				draw_rect(Rect2(c + Vector2(-6, -6), Vector2(12, 12)), Color(col.r, col.g, col.b, 0.30), true)
+				draw_rect(Rect2(c + Vector2(-6, -6), Vector2(12, 12)), col, false, 1.8)
+				draw_line(c + Vector2(-6, 0), c + Vector2(6, 0), col, 1.5)
+				draw_line(c + Vector2(0, -6), c + Vector2(0, 6), col, 1.5)
+			_:
+				draw_arc(c, 6.5, 0.0, TAU, 18, col, 1.8)
+				draw_circle(c, 2.2, col)
 
 
 static func is_left_click(event: InputEvent) -> bool:

@@ -24,12 +24,12 @@ func show_end_screen() -> void:
 	var box: VBoxContainer = parts[1]
 	box.add_theme_constant_override("separation", 10)
 
-	var title_text := "🎉 MISSION COMPLETE — YOU SURVIVED 10 DAYS!" if won else "MISSION ENDED — LET'S TRY AGAIN!"
+	var title_text := "MISSION COMPLETE — YOU SURVIVED 10 DAYS!" if won else "MISSION ENDED — LET'S TRY AGAIN!"
 	var title_color := UiKit.COLOR_GOOD if won else UiKit.COLOR_BAD
 	box.add_child(UiKit.label(title_text, UiKit.FONT_TITLE, title_color))
 
 	var stars := GameState.stars_earned
-	var star_line := "Your Rating: %s (%d of 3 Stars)" % [UiKit.stars(stars, 3, " "), stars] if won else "Your Rating: ☆ ☆ ☆ (Keep Crew Health Good through Day 10 to win!)"
+	var star_line := "Your Rating: %s (%d of 3 Stars)" % [UiKit.stars(stars, 3, " "), stars] if won else "Your Rating: [ ] [ ] [ ] (Keep Crew Health Good through Day 10 to win!)"
 	box.add_child(UiKit.label(star_line, UiKit.FONT_BODY, UiKit.COLOR_WARN))
 
 	var sh_stars := UiKit.stars(GameState.shield, Rules.max_value("shield"))

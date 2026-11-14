@@ -45,7 +45,7 @@ func begin(info: Dictionary) -> void:
 	var box: VBoxContainer = parts[1]
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
-	head.add_child(UiKit.label("🚨 SOLAR STORM ALERT! (Day %d)" % int(info.get("day", 0)), UiKit.FONT_TITLE, UiKit.COLOR_BAD, false))
+	head.add_child(UiKit.label("[!] SOLAR STORM ALERT! (Day %d)" % int(info.get("day", 0)), UiKit.FONT_TITLE, UiKit.COLOR_BAD, false))
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(spacer)
@@ -60,7 +60,7 @@ func begin(info: Dictionary) -> void:
 	box.add_child(UiKit.label(
 		"Run to the purple Radiation Shelter (bottom middle) or click the big button on the timer to hide inside!",
 		UiKit.FONT_BODY))
-	var go := UiKit.button("Start Timer & Run to Shelter! ▶", UiKit.FONT_TITLE, Vector2(0, 60))
+	var go := UiKit.button("Start Timer & Run to Shelter! >>", UiKit.FONT_TITLE, Vector2(0, 60))
 	go.pressed.connect(_start_countdown)
 	box.add_child(go)
 	add_child(_intro)
@@ -96,7 +96,7 @@ func _build_banner() -> void:
 	_bar.show_percentage = false
 	_bar.custom_minimum_size = Vector2(0, 16)
 	box.add_child(_bar)
-	var rush_btn := UiKit.button("🏃 RUSH TO RADIATION SHELTER & LOCK DOWN NOW!", 18, Vector2(0, 46))
+	var rush_btn := UiKit.button(">> RUSH TO RADIATION SHELTER & LOCK DOWN NOW!", 18, Vector2(0, 46))
 	rush_btn.pressed.connect(lockdown_now)
 	box.add_child(rush_btn)
 	add_child(_banner)

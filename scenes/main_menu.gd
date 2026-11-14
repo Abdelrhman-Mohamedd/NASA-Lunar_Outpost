@@ -180,7 +180,7 @@ func _build_action_buttons(vbox: VBoxContainer) -> Button:
 	btn_row.add_theme_constant_override("separation", 22)
 	vbox.add_child(btn_row)
 
-	var play_btn := _make_orange_cta("Play Mission   →")
+	var play_btn := _make_orange_cta("Play Mission   >>")
 	play_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	play_btn.pressed.connect(_on_play_button_pressed)
 	btn_row.add_child(play_btn)
@@ -385,7 +385,7 @@ func _render_slide() -> void:
 	nav.add_theme_constant_override("separation", 12)
 	box.add_child(nav)
 
-	var prev_btn := UiKit.button("◀ Back", 17, Vector2(140, 48))
+	var prev_btn := UiKit.button("<< Back", 17, Vector2(140, 48))
 	prev_btn.disabled = (_slide_index <= 0)
 	prev_btn.pressed.connect(func() -> void:
 		_slide_index = maxi(0, _slide_index - 1)
@@ -393,7 +393,7 @@ func _render_slide() -> void:
 	)
 	nav.add_child(prev_btn)
 
-	var next_btn := UiKit.gold_button("NEXT SLIDE ▶" if _slide_index < HOW_TO_SLIDES.size() - 1 else "START MISSION ▶", 17, Vector2(180, 48))
+	var next_btn := UiKit.gold_button("NEXT SLIDE >>" if _slide_index < HOW_TO_SLIDES.size() - 1 else "START MISSION >>", 17, Vector2(180, 48))
 	next_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	next_btn.pressed.connect(func() -> void:
 		if _slide_index < HOW_TO_SLIDES.size() - 1:

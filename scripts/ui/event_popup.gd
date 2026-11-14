@@ -22,7 +22,7 @@ func show_event(event: Dictionary) -> void:
 
 	var choices: Array = event.get("choices", [])
 	if choices.is_empty():
-		var ok := UiKit.button("Got it! ▶")
+		var ok := UiKit.button("Got it! >>")
 		ok.pressed.connect(_finish)
 		box.add_child(ok)
 		add_child(_overlay)
@@ -33,7 +33,7 @@ func show_event(event: Dictionary) -> void:
 	var first_enabled: Button = null
 	for c in choices:
 		var check := GameState.can_choose_event(String(event["id"]), String(c["id"]))
-		var text := "▶  %s\n    %s" % [c.get("label", c["id"]), _describe(c.get("effects", {}))]
+		var text := ">>  %s\n    %s" % [c.get("label", c["id"]), _describe(c.get("effects", {}))]
 		if not bool(check["ok"]):
 			text = "%s\n    (Cannot pick right now: %s)" % [c.get("label", c["id"]), _friendly_reason(String(check["reason"]))]
 		var btn := UiKit.button(text, UiKit.FONT_BODY, Vector2(0, 70))

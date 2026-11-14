@@ -58,7 +58,7 @@ func show_report(report: Dictionary) -> void:
 
 	var is_over := bool(day_end_entry.get("game_over", false))
 	var go := UiKit.gold_button(
-		"SEE MISSION RESULTS ▶" if is_over else "START DAY %d ▶" % (day_no + 1),
+		"SEE MISSION RESULTS >>" if is_over else "START DAY %d >>" % (day_no + 1),
 		16, Vector2(0, 46)
 	)
 	go.pressed.connect(func() -> void:
@@ -74,13 +74,13 @@ func _add_meter_strip(body: VBoxContainer, m: Dictionary) -> void:
 	var before := int(m["before"])
 	var after := int(m["after"])
 	var word := GameState.meter_word(key)
-	var change := "● Stayed steady"
+	var change := "= Stayed steady"
 	var color := UiKit.COLOR_TEXT
 	if after > before:
-		change = "▲ Went up"
+		change = "+ Went up"
 		color = UiKit.COLOR_GOOD
 	elif after < before:
-		change = "▼ Went down"
+		change = "- Went down"
 		color = UiKit.COLOR_WARN if word not in ["LOW!", "EMPTY!"] else UiKit.COLOR_BAD
 
 	var strip := PanelContainer.new()

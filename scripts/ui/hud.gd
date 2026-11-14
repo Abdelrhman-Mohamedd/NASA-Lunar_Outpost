@@ -57,8 +57,8 @@ func _build_top_bar() -> void:
 	meter_widgets["water"] = _make_bar_meter(meters_row, "WATER", Color(0.45, 0.72, 1.0), "")
 	meter_widgets["health"] = _make_bar_meter(meters_row, "HEALTH", Color(1.0, 0.45, 0.58), "")
 
-	shield_label = _make_badge(meters_row, "SHIELD\n★☆☆", Color(0.75, 0.55, 1.0), "shielding")
-	science_label = _make_badge(meters_row, "SCIENCE\n☆☆☆", Color(0.98, 0.76, 0.08), "")
+	shield_label = _make_badge(meters_row, "SHIELD\n[*] [ ] [ ]", Color(0.75, 0.55, 1.0), "shielding")
+	science_label = _make_badge(meters_row, "SCIENCE\n[ ] [ ] [ ]", Color(0.98, 0.76, 0.08), "")
 
 	var coach_row := HBoxContainer.new()
 	coach_row.add_theme_constant_override("separation", 8)
@@ -111,7 +111,7 @@ func _build_bottom_dock() -> void:
 	day_ap_label.add_theme_color_override("font_color", UiKit.COLOR_TEXT)
 	dock_row.add_child(day_ap_label)
 
-	mute_button = UiKit.button("🔊 ON", 12, Vector2(64, 34))
+	mute_button = UiKit.button("SFX: ON", 12, Vector2(68, 34))
 	mute_button.tooltip_text = "Mute or unmute game audio."
 	mute_button.pressed.connect(func() -> void: AudioManager.toggle_mute())
 	dock_row.add_child(mute_button)
@@ -126,7 +126,7 @@ func _build_bottom_dock() -> void:
 	reset_button.pressed.connect(_on_menu_pressed)
 	dock_row.add_child(reset_button)
 
-	end_day_button = UiKit.gold_button("▶▶ NEXT DAY", 14, Vector2(132, 34))
+	end_day_button = UiKit.gold_button(">> NEXT DAY", 14, Vector2(132, 34))
 	end_day_button.tooltip_text = "Finish today and advance to the next day."
 	end_day_button.pressed.connect(_on_end_day_pressed)
 	dock_row.add_child(end_day_button)
@@ -215,11 +215,11 @@ func _build_touch_controls() -> void:
 	add_child(dpad)
 
 	dpad.add_child(Control.new())
-	_add_dpad_btn(dpad, "▲", "up")
+	_add_dpad_btn(dpad, "^", "up")
 	dpad.add_child(Control.new())
-	_add_dpad_btn(dpad, "◀", "left")
-	_add_dpad_btn(dpad, "▼", "down")
-	_add_dpad_btn(dpad, "▶", "right")
+	_add_dpad_btn(dpad, "<", "left")
+	_add_dpad_btn(dpad, "v", "down")
+	_add_dpad_btn(dpad, ">", "right")
 
 
 func _add_dpad_btn(parent: Container, text_str: String, dir_key: String) -> void:
@@ -250,7 +250,7 @@ func _emit_dpad() -> void:
 
 func _on_mute_changed(is_muted: bool) -> void:
 	if mute_button != null:
-		mute_button.text = "🔇 OFF" if is_muted else "🔊 ON"
+		mute_button.text = "SFX: OFF" if is_muted else "SFX: ON"
 
 
 func _on_game_state_changed() -> void:

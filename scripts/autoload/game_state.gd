@@ -169,42 +169,42 @@ func meter_trend(key: String) -> String:
 		"water":
 			return _trend_text(Rules.water_recycle() - int(Rules.greenhouse_mode_data(greenhouse_mode).get("water", 0)))
 		"health":
-			return "▼ Danger!" if oxygen <= 0 or food <= 0 else "▲ Safe"
+			return "! Danger!" if oxygen <= 0 or food <= 0 else "+ Safe"
 	return ""
 
 
 func _trend_text(net: int) -> String:
 	if net > 0:
-		return "▲ Going up"
-	return "▼ Going down" if net < 0 else "● Steady"
+		return "+ Going up"
+	return "- Going down" if net < 0 else "= Steady"
 
 
-## Visual dots for Actions Left today (e.g. "● ● ● ● ○ ○").
+## Visual dots for Actions Left today (e.g. "[*] [*] [*] [*] [ ] [ ]").
 func ap_dots() -> String:
 	var max_ap := Rules.ap_per_day()
 	var dots: Array[String] = []
 	for i in range(max_ap):
-		dots.append("●" if i < ap else "○")
+		dots.append("[*]" if i < ap else "[ ]")
 	return " ".join(dots)
 
 
 ## One-sentence helper coach that tells the player what to do next without any math.
 func coach_hint() -> String:
 	if phase == PHASE_STORM:
-		return "🚨 SOLAR STORM! Click the purple Radiation Shelter (bottom middle) and press HIDE IN SHELTER!"
-	if oxygen < 35 or meter_trend("oxygen") == "▼ Going down":
-		return "💡 Coach Tip: Oxygen is dropping! Click Life Support (top right) and set it to Normal or High."
+		return "[!] SOLAR STORM! Click the purple Radiation Shelter (bottom middle) and press HIDE IN SHELTER!"
+	if oxygen < 35 or meter_trend("oxygen") == "- Going down":
+		return ">> Coach Tip: Oxygen is dropping! Click Life Support (top right) and set it to Normal or High."
 	if food < 25 and not has_logged_action("resupply") and day <= int(Rules.comms_data().get("resupply", {}).get("send_by_day", 6)):
-		return "💡 Coach Tip: Food is getting low! Visit the Communications Room (bottom right) to call a Food Supply Rocket."
+		return ">> Coach Tip: Food is getting low! Visit the Communications Room (bottom right) to call a Food Supply Rocket."
 	if day in [2, 6, 8] and not has_logged_action("forecast", day) and ap >= 1 and not comms_blocked_today:
-		return "💡 Coach Tip: Visit the Communications Room (bottom right) and Ask Earth for a Storm Forecast!"
+		return ">> Coach Tip: Visit the Communications Room (bottom right) and Ask Earth for a Storm Forecast!"
 	if shield < Rules.max_value("shield") and ap >= 2 and battery >= 30:
-		return "💡 Coach Tip: You have spare energy! Visit the purple Radiation Shelter to Upgrade your Shield."
+		return ">> Coach Tip: You have spare energy! Visit the purple Radiation Shelter to Upgrade your Shield."
 	if science < int(Rules.win_data().get("three_stars_science", 30)) and ap >= 2 and battery >= 40:
-		return "💡 Coach Tip: Want 3 Stars? Visit the yellow Power Station to Do a Science Experiment!"
+		return ">> Coach Tip: Want 3 Stars? Visit the yellow Power Station to Do a Science Experiment!"
 	if ap == 0:
-		return "✅ You used all your Actions for today! Click 'Next Day >>' at the top right."
-	return "✅ All systems look healthy! Explore the 5 rooms or click 'Next Day >>' when you are ready."
+		return "[OK] You used all your Actions for today! Click 'Next Day >>' at the top right."
+	return "[OK] All systems look healthy! Explore the 5 rooms or click 'Next Day >>' when you are ready."
 
 
 # ---------------------------------------------------------------- actions
