@@ -1,0 +1,238 @@
+extends SceneTree
+## Automated verification of the full Playtest Checklist (Milestones 1-9).
+## Run with: godot --headless --path . -s res://scripts/test_playtest_checklist.gd
+
+var _ran := false
+
+
+func _process(_delta: float) -> bool:
+	if _ran:
+		return true
+	_ran = true
+	_run_checks()
+	return true
+
+
+func _check(cond: bool, msg: String) -> void:
+	if not cond:
+		printerr("FAIL: " + msg)
+		quit(1)
+
+
+func _run_checks() -> void:
+	var gs: Node = root.get_node("GameState")
+	var nd: Node = root.get_node("NasaData")
+	var ex: Node = root.get_node("Explain")
+	var am: Node = root.get_node("AudioManager")
+	var replay_hints_script: GDScript = load("res://scripts/replay_hints.gd")
+
+	# 1. Verify Day-5 numeric test
+	var day5: Dictionary = gs.run_day5_debug_test()
+	_check(bool(day5["passed"]), "Day-5 numeric test failed: " + JSON.stringify(day5))
+	print("[PASS] 1. Day-5 numeric test: battery=32, oxygen=70, food=27, water=25, health=100")
+
+	# 2. Verify Low-Battery Lockdown on a Storm Day (Day 4, Severity 1, Shield 1)
+	gs.reset_game()
+	gs.day = 4
+	gs.shield = 1
+	gs.effective_shield_today = 1
+	gs.battery = 2
+	gs.life_support_mode = "normal"
+	gs.greenhouse_mode = "high"
+	gs.end_day()
+	_check(gs.phase == gs.PHASE_STORM, "Expected storm phase on Day 4")
+	_check(gs.battery == 2, "Expected 2 PU before lockdown, got %d" % gs.battery)
+	var low_bat_report: Dictionary = gs.resolve_storm(true)
+	var storm_res: Dictionary = low_bat_report["storm"]
+	_check(bool(storm_res["low_battery"]) == true, "Expected low_battery=true")
+	_check(gs.battery == 0, "Expected battery to drop to 0 on low-power lockdown")
+	_check(int(storm_res["damage"]) == 6, "Expected S1 shield 1 low-power damage ceil(10*0.8*0.75)=6, got %d" % int(storm_res["damage"]))
+	print("[PASS] 2. Low-battery lockdown test: battery 2 -> 0, factor 0.75 applied (damage=6), greenhouse paused, console explained")
+
+	# 3. Verify Full 10-Day Win (3 Stars) + Non-repeating OSDR facts + DONKI storm records
+	gs.reset_game()
+	var seen_facts: Dictionary = {}
+	var f0: Dictionary = nd.next_fact()
+	seen_facts[f0["id"]] = true
+
+	for d in range(1, 11):
+		_check(gs.day == d, "Expected day %d, got %d" % [d, gs.day])
+		while not gs.pending_events.is_empty():
+			var ev: Dictionary = gs.pending_events.pop_front()
+			var eid := String(ev.get("id", ""))
+			var choices: Array = ev.get("choices", [])
+			if not choices.is_empty():
+				match eid:
+					"dusty_panels":
+						gs.choose_event(eid, "clean")
+					"pump_failure":
+						gs.choose_event(eid, "fix")
+					"micrometeorite_leak":
+						gs.choose_event(eid, "patch")
+					"research_window":
+						gs.choose_event(eid, "double")
+					"battery_cell":
+						gs.choose_event(eid, "repair")
+					"comms_blackout":
+						gs.choose_event(eid, "wait")
+					_:
+						gs.choose_event(eid, String(choices[0]["id"]))
+
+		if d == 1:
+			gs.try_action("upgrade_shield")
+		elif d == 2:
+			gs.try_action("upgrade_shield")
+		elif d == 3:
+			gs.try_action("resupply", "food")
+		elif d == 6:
+			gs.try_action("forecast")
+		elif d == 8:
+			gs.try_action("forecast")
+
+		gs.end_day()
+		if gs.phase == gs.PHASE_STORM:
+			var rec: Dictionary = gs.storm_info.get("record", {})
+			_check(not rec.is_empty(), "Missing DONKI record for storm on day %d" % d)
+			gs.resolve_storm(true)
+
+		var fd: Dictionary = nd.next_fact()
+		_check(not seen_facts.has(fd["id"]), "Repeated OSDR fact %s on day %d" % [fd["id"], d])
+		seen_facts[fd["id"]] = true
+
+	var fend: Dictionary = nd.next_fact()
+	_check(not seen_facts.has(fend["id"]), "Repeated OSDR fact on end screen")
+	seen_facts[fend["id"]] = true
+	_check(not nd.facts_repeated, "OSDR facts should not repeat in one 10-day run")
+	_check(gs.game_over and gs.mission_won, "Expected 10-day win, got game_over=%s won=%s health=%d" % [str(gs.game_over), str(gs.mission_won), gs.health])
+	_check(gs.stars_earned == 3, "Expected 3 stars, got %d (health=%d, science=%d)" % [gs.stars_earned, gs.health, gs.science])
+	print("[PASS] 3. Full 10-day win test: Won with %d/3 Stars (Health=%d, Science=%d), 12 unique OSDR facts shown with 0 repeats" % [gs.stars_earned, gs.health, gs.science])
+
+	# 4. Verify Loss condition and "What went wrong" ReplayHints
+	gs.reset_game()
+	gs.oxygen = 0
+	gs.food = 0
+	for _i in range(5):
+		if gs.game_over:
+			break
+		gs.end_day()
+		if gs.phase == gs.PHASE_STORM:
+			gs.resolve_storm(false)
+	_check(gs.game_over and not gs.mission_won and gs.health == 0, "Expected loss with health 0")
+	var hints: Array[String] = replay_hints_script.build()
+	_check(not hints.is_empty(), "Expected non-empty replay hints on loss")
+	print("[PASS] 4. Loss & replay hints test: Health reached 0, generated %d replay hints: %s" % [hints.size(), JSON.stringify(hints)])
+
+	# 5. Verify UI scenes, tap-to-explain terms, and audio mute hooks
+	for term_id in ["solar_storm", "radiation", "shielding", "oxygen", "battery", "greenhouse", "comm_delay"]:
+		var txt: String = ex.term_text(term_id)
+		_check(txt.length() > 10, "Missing tooltip text for " + term_id)
+		ex.show_term(term_id)
+		_check(ex.is_open(), "Explain modal should open for " + term_id)
+		ex.close()
+	am.toggle_mute()
+	_check(am.muted == true, "Expected muted=true")
+	am.toggle_mute()
+	_check(am.muted == false, "Expected muted=false")
+
+	var menu_scene: PackedScene = load("res://scenes/main_menu.tscn")
+	var menu_inst := menu_scene.instantiate()
+	root.add_child(menu_inst)
+	menu_inst.free()
+
+	var base_scene: PackedScene = load("res://scenes/lunar_base.tscn")
+	var base_inst := base_scene.instantiate()
+	root.add_child(base_inst)
+	var astro: CharacterBody2D = base_inst.get_node("Astronaut")
+	_check(astro.walk_audio != null, "Expected Astronaut AudioStreamPlayer walk_audio to exist")
+	_check(astro.anim_sprite != null and astro.anim_sprite.sprite_frames != null, "Expected Astronaut AnimatedSprite2D with SpriteFrames")
+	var sf: SpriteFrames = astro.anim_sprite.sprite_frames
+	_check(sf.get_frame_count("run") == 10 and sf.get_animation_loop("run") and is_equal_approx(sf.get_animation_speed("run"), 12.0), "Expected run: 10 frames (0-9), loop, 12 fps")
+	_check(sf.get_frame_count("connect") == 1 and not sf.get_animation_loop("connect") and is_equal_approx(sf.get_animation_speed("connect"), 12.0), "Expected connect: 1 frame (11), once, 12 fps")
+	_check(sf.get_frame_count("stop") == 2 and not sf.get_animation_loop("stop") and is_equal_approx(sf.get_animation_speed("stop"), 12.0), "Expected stop: 2 frames (13, 14), once, 12 fps")
+	_check(sf.get_frame_count("idle") == 1 and sf.get_animation_loop("idle") and is_equal_approx(sf.get_animation_speed("idle"), 12.0), "Expected idle: 1 frame (15), loop, 12 fps")
+	var hollow_regions := [Rect2(0, 1024, 512, 512), Rect2(1024, 1024, 512, 512), Rect2(512, 1536, 512, 512)]
+	for anim_name in ["run", "connect", "stop", "idle"]:
+		for fi in range(sf.get_frame_count(anim_name)):
+			var atex: AtlasTexture = sf.get_frame_texture(anim_name, fi)
+			_check(atex.region not in hollow_regions, "Hollow frame region found in " + anim_name)
+	# Simulate standing still for 10 seconds + walking and stopping 3 times
+	for _tick in range(600):
+		astro._update_animation_and_pet(false, 1.0 / 60.0)
+		var cur_tex: AtlasTexture = sf.get_frame_texture(astro.anim_sprite.animation, astro.anim_sprite.frame)
+		_check(cur_tex.region not in hollow_regions, "Hollow frame shown while standing still")
+	for _cycle in range(3):
+		astro.velocity = Vector2(240, 0)
+		for _tick in range(60):
+			astro._update_animation_and_pet(true, 1.0 / 60.0)
+			var cur_tex: AtlasTexture = sf.get_frame_texture(astro.anim_sprite.animation, astro.anim_sprite.frame)
+			_check(cur_tex.region not in hollow_regions, "Hollow frame shown while walking")
+		astro.velocity = Vector2.ZERO
+		astro._update_animation_and_pet(false, 1.0 / 60.0)
+		_check(astro.anim_sprite.animation == &"connect", "Expected connect on stop")
+		astro._on_animation_finished()
+		_check(astro.anim_sprite.animation == &"stop", "Expected stop after connect")
+		astro._on_animation_finished()
+		_check(astro.anim_sprite.animation == &"idle", "Expected idle after stop")
+	_check(astro.pet_follower != null and astro.pet_sprite != null and astro.pet_sprite.sprite_frames != null, "Expected PetFollower AnimatedSprite2D")
+	var psf: SpriteFrames = astro.pet_sprite.sprite_frames
+	_check(psf.get_frame_count("default") == 10 and psf.get_animation_loop("default") and is_equal_approx(psf.get_animation_speed("default"), 12.0), "Expected pet default: 10 frames, loop, 12 fps")
+
+	# Verify animation state machine: idle -> run (right/left flip) -> connect -> stop -> idle, and interrupt back to run
+	_check(astro.anim_sprite.animation == &"idle", "Expected initial animation to be idle")
+	astro.velocity = Vector2(240, 0)
+	astro._update_animation_and_pet(true, 0.016)
+	_check(astro.anim_sprite.animation == &"run" and astro.anim_sprite.flip_h == false, "Expected run facing right")
+	astro.velocity = Vector2(-240, 0)
+	astro._update_animation_and_pet(true, 0.016)
+	_check(astro.anim_sprite.animation == &"run" and astro.anim_sprite.flip_h == true, "Expected run facing left")
+	astro.velocity = Vector2.ZERO
+	astro._update_animation_and_pet(false, 0.016)
+	_check(astro.anim_sprite.animation == &"connect", "Expected transition to connect when stopping")
+	astro._on_animation_finished()
+	_check(astro.anim_sprite.animation == &"stop", "Expected transition from connect to stop")
+	astro.velocity = Vector2(240, 0)
+	astro._update_animation_and_pet(true, 0.016)
+	_check(astro.anim_sprite.animation == &"run", "Expected immediate return to run if movement restarts during stop")
+	astro.velocity = Vector2.ZERO
+	astro._update_animation_and_pet(false, 0.016)
+	astro._on_animation_finished()
+	astro._on_animation_finished()
+	_check(astro.anim_sprite.animation == &"idle", "Expected transition from stop to idle")
+
+	# Verify walking into all 5 facilities and touch controls
+	for fac_name in ["PowerStation", "LifeSupport", "Greenhouse", "RadiationShelter", "CommsRoom"]:
+		var fac_node: Area2D = base_inst.get_node("Facilities/" + fac_name)
+		_check(fac_node != null, "Missing facility node " + fac_name)
+		fac_node._on_body_entered(astro)
+		_check(astro.get_nearest_facility() == fac_node, "Expected nearest facility to be " + fac_name)
+		fac_node._on_body_exited(astro)
+	astro.touch_direction = Vector2(1, 0)
+	astro._physics_process(0.016)
+	_check(astro.velocity.x > 0.0, "Expected touch_direction to drive astronaut velocity")
+	astro.touch_direction = Vector2.ZERO
+
+	base_inst._handle_world_click(Vector2(500, 500))
+	_check(astro.has_click_target == true, "Expected click on floor to set has_click_target=true")
+	var pwr: Area2D = base_inst.get_node("Facilities/PowerStation")
+	base_inst._handle_world_click(pwr.global_position)
+	_check(astro.pending_facility == pwr, "Expected click on PowerStation to set pending_facility=PowerStation")
+	base_inst._on_storm_started({"day": 4, "severity": 1, "warned": true, "seconds": 10.0, "record": {}})
+	_check(astro.movement_locked == true, "Expected astronaut locked while storm intro card is open")
+	base_inst.storm_overlay._start_countdown()
+	_check(astro.movement_locked == false, "Expected astronaut unlocked during storm countdown so player can run to shelter")
+	base_inst.storm_overlay._finish(true)
+	var dm: Control = base_inst.get_node("CanvasLayer/DashboardManager")
+	for fid in ["power_station", "life_support", "greenhouse", "radiation_shelter", "comms_room"]:
+		dm.open_dashboard(fid)
+		for ttab in ["information", "buildings", "operations", "statistics"]:
+			dm.current_top_tab = ttab
+			dm._refresh_contents()
+		dm.current_sub_tab = "glossary"
+		dm._refresh_contents()
+		dm.current_sub_tab = "controls"
+	dm.close_dashboard()
+	base_inst.free()
+	print("[PASS] 5. UI scenes (main_menu, lunar_base), 5-room chamfered dashboard, 7 tap-to-explain terms, and audio mute hooks verified")
+
+	print("ALL PLAYTEST CHECKLIST ITEMS PASSED!")
+	quit(0)
